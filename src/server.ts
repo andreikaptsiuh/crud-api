@@ -1,17 +1,16 @@
-import dotenv from 'dotenv';
+import 'dotenv/config';
 import http from 'http';
-
-dotenv.config();
+import { userRouter } from './routers/userRouter';
 
 const PORT = process.env.PORT || 3000;
 
 const server = http.createServer((req, res) => {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    
-    if (req.url === 'api/users') {
-        res.end('USERS');
+    if (req.url?.includes('/api/users')) {
+        userRouter(req, res);
     } else {
-        res.end(req.url);
+        const message = 'For this url nothing not found';
+        res.writeHead(404, message);
+        res.end(message);
     }
 });
   
