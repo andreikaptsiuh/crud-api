@@ -39,7 +39,7 @@ class MyDb {
             user[key as keyof IUser] = data[key as keyof IUser];
         };
 
-        return true;
+        return user;
     };
 
     deleteUserById(id: string) {

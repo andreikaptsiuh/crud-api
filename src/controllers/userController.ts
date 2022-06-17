@@ -3,6 +3,8 @@ import http from 'http';
 import { validate } from 'uuid';
 import { myDb } from '../myDb/myDb';
 
+const InvalidIdMessage = 'User id invalid';
+
 class UserController {
     getUsers(req: http.IncomingMessage, res: http.ServerResponse) {
         try {
@@ -18,10 +20,8 @@ class UserController {
         const id = this._getIdFromUrl(req);
 
         if (!validate(id)) {
-            const message = 'User id invalid';
-
-            res.writeHead(400, message);
-            res.end(message);
+            res.writeHead(400, InvalidIdMessage);
+            res.end(InvalidIdMessage);
             return;
         };
 
@@ -38,9 +38,11 @@ class UserController {
 
     addUser(req: http.IncomingMessage, res: http.ServerResponse) {
         let body: any[] = [];
+
         req.on('data', (chunk) => {
             body.push(chunk as string);
         });
+
         req.on('end', () => {
             try {
                 const bodyJson = Buffer.concat(body);
@@ -65,11 +67,57 @@ class UserController {
     };
 
     updateUserById(req: http.IncomingMessage, res: http.ServerResponse) {
-        res.end("Update user by id");
+        const id = this._getIdFromUrl(req);
+
+        if (!validate(id)) {
+            res.writeHead(400, InvalidIdMessage);
+            res.end(InvalidIdMessage);
+            return;
+        };
+
+        let body: any[] = [];
+
+        req.on('data', (chunk) => {
+            body.push(chunk as string);
+        });
+
+        req.on('end', () => {
+            try {
+                const bodyJson = Buffer.concat(body);
+                const userForUpdate = JSON.parse(bodyJson as unknown as string);
+
+                const user = myDb.updateUserById(id, userForUpdate);
+
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify(user));
+            } catch (error) {
+                const e = error as Error;
+                res.writeHead(404, e.message);
+                res.end(e.message);
+            };
+        }); 
     };
 
     deleteUserById(req: http.IncomingMessage, res: http.ServerResponse) {
-        res.end("Delete user by id");
+        const id = this._getIdFromUrl(req);
+
+        if (!validate(id)) {
+            res.writeHead(400, InvalidIdMessage);
+            res.end(InvalidIdMessage);
+            return;
+        };
+
+        try {
+            const result: boolean = myDb.deleteUserById(id);
+            if (result) {
+                res.writeHead(204, { 'Content-Type': 'application/json' });
+                res.end();
+            }
+        } catch (error) {
+            const e = error as Error;
+            res.writeHead(404, e.message);
+            res.end(e.message);
+        };
     };
 
     _checkReqUserBody(user: unknown): boolean {

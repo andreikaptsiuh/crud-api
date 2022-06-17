@@ -2,11 +2,10 @@ import { userController } from '../controllers/userController';
 import http from 'http';
 
 export const userRouter = (req: http.IncomingMessage, res: http.ServerResponse) => {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-
     switch (req.method) {
         case 'GET':
-            const reqParameters = req.url?.split('/') as string[];
+            const url = req.url?.replace(/\/$|\/*$/g, '');
+            const reqParameters = url?.split('/') as string[];
 
             if (reqParameters[reqParameters?.length - 1] === 'users') {
                 userController.getUsers(req, res);
