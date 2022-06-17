@@ -1,3 +1,4 @@
+import { v4 as uuid } from 'uuid';
 import { IUser, IUserFromDb } from '../interfaces/IUser';
 
 class MyDb {
@@ -24,7 +25,7 @@ class MyDb {
     addUser (user: IUser) {
         const userWithId: IUserFromDb = {...user, id: this._createUserId()};
         this.users.push(userWithId);
-        return true;
+        return userWithId;
     };
 
     updateUserById (id: string, data: IUser) {
@@ -55,7 +56,7 @@ class MyDb {
     };
 
     _createUserId(): string {
-        return String(this.users.length + 1); // TODO: id should be uuid
+        return uuid();
     };
 };
 

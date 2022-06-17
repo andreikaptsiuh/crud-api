@@ -1,4 +1,6 @@
+import { IUser } from '@/interfaces/IUser';
 import http from 'http';
+import { validate } from 'uuid';
 import { myDb } from '../myDb/myDb';
 
 class UserController {
@@ -15,7 +17,7 @@ class UserController {
     getUserById(req: http.IncomingMessage, res: http.ServerResponse) {    
         const id = this._getIdFromUrl(req);
 
-        if (typeof id !== 'string') { // TODO: uuid check
+        if (!validate(id)) {
             const message = 'User id invalid';
 
             res.writeHead(400, message);
@@ -35,7 +37,31 @@ class UserController {
     };
 
     addUser(req: http.IncomingMessage, res: http.ServerResponse) {
-        res.end("Add user");
+        let body: any[] = [];
+        req.on('data', (chunk) => {
+            body.push(chunk as string);
+        });
+        req.on('end', () => {
+            try {
+                const bodyJson = Buffer.concat(body);
+                const userForCreate = JSON.parse(bodyJson as unknown as string);
+
+                if (!this._checkReqUserBody(userForCreate)) {
+                    const message = 'Request body invalid';
+                    res.writeHead(400, message);
+                    res.end(message);
+                    return;
+                };
+
+                const createdUser = myDb.addUser(userForCreate);
+
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify(createdUser));
+            } catch (error) {
+                const e = error as Error;
+                res.end(e.message);
+            }
+        }); 
     };
 
     updateUserById(req: http.IncomingMessage, res: http.ServerResponse) {
@@ -44,6 +70,17 @@ class UserController {
 
     deleteUserById(req: http.IncomingMessage, res: http.ServerResponse) {
         res.end("Delete user by id");
+    };
+
+    _checkReqUserBody(user: unknown): boolean {
+        if (
+            typeof (user as IUser).username !== 'string' ||
+            typeof (user as IUser).age !== 'number' ||
+            !Array.isArray((user as IUser).hobbies)
+        ) {
+            return false;
+        };
+        return true;
     };
 
     _getIdFromUrl(req: http.IncomingMessage): string {
